@@ -35,31 +35,32 @@ def run_spark_job(spark):
         .load()
     )
     # Show schema for the incoming resources for checks
-    # df.printSchema()
+    df.printSchema()
 
     # Take only value and convert it to String
-    kafka_df = df.selectExpr("CAST(value AS STRING)")
+    kafka_df = df.selectExpr("CAST(value AS STRING)", "timestamp")
 
     service_table = kafka_df.select(
-        func.from_json(func.col("value"), schema).alias("DF")
-    ).select("DF.*")
-
-    # select original_crime_type_name and disposition
-    distinct_table = service_table.select("original_crime_type_name", "disposition")
+        func.from_json(func.col("value"), schema).alias("DF"), "timestamp"
+    ).select("DF.*", "timestamp")
 
     # count the number of original crime type
-    agg_df = distinct_table.groupBy("disposition").agg(
-        func.count("original_crime_type_name").alias("original_crime_types")
+    agg_df = (
+        service_table
+        .withWatermark("timestamp", "12 hours")
+        .groupBy(
+            func.window("call_date_time", "1 day"),
+            "original_crime_type_name",
+            "disposition",
+        ).count()
     )
 
     # Q1. Submit a screen shot of a batch ingestion of the aggregation
     # write output stream
     query = (
         agg_df.writeStream
-        .trigger(processingTime="30 second")
-        .outputMode("Complete")
+        .outputMode("update")
         .format("console")
-        .option("truncate", "false")
         .start()
     )
 
@@ -78,9 +79,7 @@ def run_spark_job(spark):
     join_query = (
         agg_df.join(radio_code_df, on="disposition")
         .writeStream.format("console")
-        .trigger(processingTime="30 second")
-        .outputMode("Complete")
-        .option("truncate", "false")
+        .outputMode("update")
         .start()
     )
     # attach a ProgressReporter

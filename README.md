@@ -1,7 +1,7 @@
 # sf_crime
 Udacity Spark Streaming
 
-Please find the nScreenshots in `screenshots.zip` and note that I did add a screenshot of the SQL-Tab of the Spark-UI instead of the deprecated Streaming tab.
+Please find the Screenshots in `screenshots.zip` and note that I did add a screenshot of the SQL-Tab of the Spark-UI instead of the deprecated Streaming tab.
 
 Answers to the questions:
 1. How did changing values on the SparkSession property parameters affect the throughput and latency of the data?
