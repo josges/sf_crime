@@ -5,9 +5,9 @@ import time
 
 class ProducerServer(KafkaProducer):
     def __init__(self, input_file, topic, **kwargs):
-        super().__init__(**kwargs)
         self.input_file = input_file
         self.topic = topic
+        super().__init__(**kwargs)
 
     def generate_data(self):
         with open(self.input_file, "r") as f:
